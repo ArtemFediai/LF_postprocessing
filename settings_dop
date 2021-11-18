@@ -1,0 +1,111 @@
+pbc: [True, True, True]
+
+particles:
+ holes: True
+ electrons: True
+ excitons: True
+
+excitonics: None
+
+morphology_width: 15
+
+materials:
+- name: host
+  input_mode_transport: "PAR: eaip,sig,l"
+  molecule_parameters:
+    exciton preset: doping
+    energies:
+    - [5.0,2.0]
+    - [0.0,0.0]
+    - [0.2,0.2]
+- name: dopant
+  input_mode_transport: "PAR: eaip,sig,l"
+  molecule_parameters:
+    exciton preset: doping
+    is_dopant: True
+    energies:
+    - [9.0,5.0]
+    - [0.0,0.0]
+    - [0.2,0.2]
+
+layers:
+- thickness: 15
+  morphology_input_mode: cubic
+  molecule_species:
+  - material: host
+    concentration: 0.95
+  - material: dopant
+    concentration: 0.05
+
+parallel: False
+
+neighbours: 6
+transfer_integral_source: miller_classic
+
+pair_input:
+ - molecule 1: host
+   molecule 2: host
+   transfer_integral_parameters:
+     hole_transfer_integrals:
+       wf_decay_length: 1
+       maximum_ti: 1E9
+     electron_transfer_integrals:
+       wf_decay_length: 1
+       maximum_ti: 1E9
+     Dexter_transfer_integrals:
+       wf_decay_length: 1
+       maximum_ti: 1E8
+
+ - molecule 1: host
+   molecule 2: dopant
+   transfer_integral_parameters:
+     hole_transfer_integrals:
+       wf_decay_length: 1
+       maximum_ti: 1E9
+     electron_transfer_integrals:
+       wf_decay_length: 1
+       maximum_ti: 1E9
+     Dexter_transfer_integrals:
+       wf_decay_length: 1
+       maximum_ti: 1E8
+
+ - molecule 1: dopant
+   molecule 2: dopant
+   transfer_integral_parameters:
+     hole_transfer_integrals:
+       wf_decay_length: 1
+       maximum_ti: 1E9
+     electron_transfer_integrals:
+       wf_decay_length: 1
+       maximum_ti: 1E9
+     Dexter_transfer_integrals:
+       wf_decay_length: 1
+       maximum_ti: 1E8
+
+
+experiments:
+- simulations: 1
+  measurement: DC
+  Temperature: 300
+  field_direction: [1, 0, 0]
+  field_strength: 0.03
+  initial_holes: 0
+
+max_iterations: 10000000
+iv_fluctuation: 0.05
+new_wano: True
+
+analysis_plots:
+  density: False
+  current: False
+  trajectory: True
+
+trajectory_settings:
+  fmt: None
+  net_dipole: True
+  timestep: 0
+
+autorun_start: 0.9 
+autorun_end: 1.0
+
+
