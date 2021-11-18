@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import yaml
+import inspect
 
 global a, SETTINGS_FILENAME, DOP, N_R, N_DOP, N_CPUs, YAML_FILENAME
 #if I want sh file to be generated -->
@@ -126,17 +127,19 @@ def run_kmc(i_dop, i_r):
             analysis_autorun=False)
 
 
-def main():
+def lf_wrapper():
     """
     creates joblist for threadfarm
     save simulation "hyper"parameters into __name__.yaml
     :return:
     """
+    name_of_this_fun = inspect.stack()[0][3]
+
     num_part_after = np.array(a * a * a * DOP, dtype=np.float)
     with open("joblist", 'w') as fid:
         for i_dop in range(0, len(DOP)):
             for i_r in range(0, N_R):
-                fid.write("%i main1.run_kmc %i %i\n" % (N_CPUs, i_dop, i_r))
+                fid.write(f"%i {name_of_this_fun}.run_kmc %i %i\n" % (N_CPUs, i_dop, i_r))
 
     main_settings_dict = {'system size': a.tolist(),  # nm
                           'number of doping points': N_DOP,
@@ -155,5 +158,6 @@ def main():
     if GENERATE_SH_FILE:
         generate_sh_file()
 
+
 if __name__ == '__main__':
-    main()
+    lf_wrapper()  # <-- this must be a function to create jobfile
