@@ -1,5 +1,4 @@
 import os
-
 import numpy as np
 import yaml
 
@@ -11,13 +10,11 @@ N_DOP = 10
 N_R = 30  # try not using this!
 N_CPUs = 1
 DOP = np.array(np.logspace(np.log10(1E-2), np.log10(2E-1), N_DOP))
-Np_I_wish = 500
+Np_I_wish = 500  # number of dopants I wish
 a = np.array((Np_I_wish / DOP) ** (1.0 / 3.0), dtype=np.int)
 for i in range(len(a)):
     if a[i] < 15:
         a[i] = 15.0
-
-
 
 
 def run_kmc(i_dop, i_r):
