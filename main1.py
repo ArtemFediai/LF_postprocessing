@@ -19,6 +19,7 @@ for i in range(len(a)):
     if a[i] < 15:
         a[i] = 15.0
 
+
 def generate_sh_file(file_name = 'run_lf_from_threadfarm.sh', 
                      nodes=1, 
                      time='0-24:00:00', 
