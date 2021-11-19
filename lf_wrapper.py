@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd
 import yaml
 import inspect
 
@@ -167,14 +168,43 @@ def load_all_dipoles():
     pass
 
 
-def mobility_vs_doping():
+def return_mobility(path='/home/artem/Desktop/LF_data_from_hk/dis_0_1_node',
+                    path_to_mobility='results/experiments/current_characteristics/mobilities_0.dat',
+                    path_to_yaml='lf_wrapper.yaml'):
     """
 
     :return:
     mobility vs doping vs replicas. pandas?
     """
+    outer_level = "dop_"  # TODO: save to yaml file
+    inner_level = "r_"
+    # <-- dop_XX/r_XX
 
-    pass
+    with open(file=path_to_yaml, mode='r') as fid:
+        hypersettings_dict = yaml.load(fid, Loader=yaml.SafeLoader)
+
+    DOP = hypersettings_dict['doping molar rate']
+    N_R = hypersettings_dict['number of replicas']
+
+    pd_mobility = pd.DataFrame(columns=['doping', 'field', 'mobility'])
+
+    for i_dop, dop in enumerate(DOP):
+        print(i_dop)
+        for i_r in range(N_R):
+            print(str(i_r))
+            var_path = outer_level + str(i_dop) + '/' + inner_level + str(i_r)
+            current_path_to_mobility = os.path.join(path, var_path, path_to_mobility)
+            print(current_path_to_mobility)
+            _ = np.loadtxt(current_path_to_mobility)
+            pd_mobility =pd_mobility.append({'doping': dop,
+                                'field': _[0],
+                                'mobility': _[1]},
+                               ignore_index=True)
+
+    print(pd_mobility)
+
+    return pd_mobility
 
 if __name__ == '__main__':
-    write_joblist()  # <-- this must be a function to create jobfile
+    return_mobility()
+    # write_joblist()  # <-- this must be a function to create jobfile
