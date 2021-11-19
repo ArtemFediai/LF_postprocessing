@@ -21,7 +21,7 @@ for i in range(len(a)):
         a[i] = 15.0
 
 
-def generate_sh_file(file_name = 'run_lf_from_threadfarm.sh', 
+def generate_sh_file(file_name='run_lf_from_threadfarm.sh',
                      nodes=1, 
                      time='0-24:00:00', 
                      partition='accelerated',
@@ -127,19 +127,19 @@ def run_kmc(i_dop, i_r):
             analysis_autorun=False)
 
 
-def lf_wrapper():
+def write_joblist():
     """
-    creates joblist for threadfarm
+    creates joblist for threadfarm and writes it down
     save simulation "hyper"parameters into __name__.yaml
     :return:
     """
-    name_of_this_fun = inspect.stack()[0][3]
+    # name_of_this_fun = inspect.stack()[0][3]  # returns name of the current function
 
     num_part_after = np.array(a * a * a * DOP, dtype=np.float)
     with open("joblist", 'w') as fid:
         for i_dop in range(0, len(DOP)):
             for i_r in range(0, N_R):
-                fid.write(f"%i {name_of_this_fun}.run_kmc %i %i\n" % (N_CPUs, i_dop, i_r))
+                fid.write(f"%i {__file__.split('.')[0].split('/')[-1]}.run_kmc %i %i\n" % (N_CPUs, i_dop, i_r))
 
     main_settings_dict = {'system size': a.tolist(),  # nm
                           'number of doping points': N_DOP,
@@ -159,5 +159,22 @@ def lf_wrapper():
         generate_sh_file()
 
 
+def load_all_dipoles():
+    """
+    not used
+    :return:
+    """
+    pass
+
+
+def mobility_vs_doping():
+    """
+
+    :return:
+    mobility vs doping vs replicas. pandas?
+    """
+
+    pass
+
 if __name__ == '__main__':
-    lf_wrapper()  # <-- this must be a function to create jobfile
+    write_joblist()  # <-- this must be a function to create jobfile
