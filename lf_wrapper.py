@@ -5,9 +5,9 @@ import yaml
 import inspect
 
 global a, SETTINGS_FILENAME, DOP, N_R, N_DOP, N_CPUs, YAML_FILENAME
-#if I want sh file to be generated -->
+# if I want sh file to be generated -->
 GENERATE_SH_FILE = True
-#<-- if I want sh file to be generated
+# <-- if I want sh file to be generated
 
 SETTINGS_FILENAME = 'settings_dop'  # LF settings file
 YAML_FILENAME = f'{__file__.split(".")[0]}.yaml'  #
@@ -23,8 +23,8 @@ for i in range(len(a)):
 
 
 def generate_sh_file(file_name='run_lf_from_threadfarm.sh',
-                     nodes=1, 
-                     time='0-24:00:00', 
+                     nodes=1,
+                     time='0-24:00:00',
                      partition='accelerated',
                      email='artem.fedyay@gmail.com',
                      NANOMATCH='/home/hk-project-virtmat/bh5670/QP_installation_V4/nanomatch',
@@ -147,7 +147,7 @@ def write_joblist():
                           'number of replicas': N_R,
                           'doping molar rate': DOP.tolist(),  # 0 < DOP < 1
                           'actual dopants number': np.array(num_part_after, dtype=np.int).tolist(),
-                          'number of simulations': N_R*N_DOP}
+                          'number of simulations': N_R * N_DOP}
     with open(YAML_FILENAME, 'w') as fid:
         yaml.dump(data=main_settings_dict, stream=fid)
     print(f"\nhyper-settings saved as {YAML_FILENAME}")
@@ -170,12 +170,18 @@ def load_all_dipoles():
 
 def return_mobility(path='/home/artem/Desktop/LF_data_from_hk/dis_0_1_node',
                     path_to_mobility='results/experiments/current_characteristics/mobilities_0.dat',
+                    path_to_current_density='results/experiments/current_characteristics/all_data_points/current_density_0.dat',
                     path_to_yaml='lf_wrapper.yaml'):
+
     """
 
+    :param path:
+    :param path_to_mobility:
+    :param path_to_yaml:
     :return:
-    mobility vs doping vs replicas. pandas?
+    pd_mobility: pandas data frame mit doping / field / mobility
     """
+
     outer_level = "dop_"  # TODO: save to yaml file
     inner_level = "r_"
     # <-- dop_XX/r_XX
@@ -186,7 +192,9 @@ def return_mobility(path='/home/artem/Desktop/LF_data_from_hk/dis_0_1_node',
     DOP = hypersettings_dict['doping molar rate']
     N_R = hypersettings_dict['number of replicas']
 
-    pd_mobility = pd.DataFrame(columns=['doping', 'field', 'mobility'])
+    pd_mobility = pd.DataFrame(
+        columns=['doping', 'field', 'mobility [cm^2/(V*sec)]', 'current density [A/m^2]', 'voltage [V]']
+    )
 
     for i_dop, dop in enumerate(DOP):
         print(i_dop)
@@ -194,16 +202,21 @@ def return_mobility(path='/home/artem/Desktop/LF_data_from_hk/dis_0_1_node',
             print(str(i_r))
             var_path = outer_level + str(i_dop) + '/' + inner_level + str(i_r)
             current_path_to_mobility = os.path.join(path, var_path, path_to_mobility)
+            current_path_to_current_density = os.path.join(path, var_path, path_to_current_density)
             print(current_path_to_mobility)
             _ = np.loadtxt(current_path_to_mobility)
-            pd_mobility =pd_mobility.append({'doping': dop,
-                                'field': _[0],
-                                'mobility': _[1]},
-                               ignore_index=True)
+            __ = np.loadtxt(current_path_to_current_density)
+            pd_mobility = pd_mobility.append({'doping': dop,
+                                              'field': _[0],
+                                              'mobility [cm^2/(V*sec)]': _[1],
+                                              'current density [A/m^2]': __[1],
+                                              'voltage [V]': __[0]},
+                                             ignore_index=True)
 
     print(pd_mobility)
 
     return pd_mobility
+
 
 if __name__ == '__main__':
     return_mobility()
