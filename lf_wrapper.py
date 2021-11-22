@@ -165,6 +165,7 @@ def load_all_dipoles():
     not used
     :return:
     """
+
     pass
 
 
@@ -213,7 +214,11 @@ def return_mobility(path='/home/artem/Desktop/LF_data_from_hk/dis_0_1_node',
                                               'voltage [V]': __[0]},
                                              ignore_index=True)
 
+    pd_mobility['conductivity [Sm/m]'] = pd_mobility['current density [A/m^2]'] / (pd_mobility['field'] * 1E9)
     print(pd_mobility)
+
+    pd_mobility.to_csv(os.path.join(path, 'mobility.csv'))
+    print("I save mobility, conductivity etc. to mobility.png")
 
     return pd_mobility
 

@@ -43,3 +43,10 @@ lineplot1 = copy.deepcopy(lineplot)
 lineplot1(data=df_mobility,
          save_to='current_density.png',
          y='current density [A/m^2]')  # current density
+# 3
+
+lineplot2 = copy.deepcopy(lineplot)
+lineplot2(data=df_mobility,
+          save_to='conductivity.png',
+          y='conductivity [Sm/m]')  # conductivity
+
