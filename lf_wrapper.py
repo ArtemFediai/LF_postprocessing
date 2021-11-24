@@ -4,22 +4,23 @@ import pandas as pd
 import yaml
 import inspect
 
-global a, SETTINGS_FILENAME, DOP, N_R, N_DOP, N_CPUs, YAML_FILENAME
+global a, SETTINGS_FILENAME, DOP, N_R, N_DOP, N_CPUs, YAML_FILENAME, BASE_PATH
 # if I want sh file to be generated -->
-GENERATE_SH_FILE = True
+GENERATE_SH_FILE = True  # sh file for SLURM (horeka)
 # <-- if I want sh file to be generated
 
+BASE_PATH = '/home/artem/Desktop/LF_data_from_hk/dis_0_1_node'
 SETTINGS_FILENAME = 'settings_dop'  # LF settings file
-YAML_FILENAME = f'{__file__.split(".")[0]}.yaml'  #
-N_DOP = 10
+YAML_FILENAME = f'{__file__.split(".")[0]}.yaml'  # yaml file with LF hyperparameters that will be generated
+N_DOP = 10  # number of doping points
 N_R = 30  # try not using this!
-N_CPUs = 1
-DOP = np.array(np.logspace(np.log10(1E-2), np.log10(2E-1), N_DOP))
-Np_I_wish = 500  # number of dopants I wish
-a = np.array((Np_I_wish / DOP) ** (1.0 / 3.0), dtype=np.int)
+N_CPUs = 1  # number of cpus used per replica. 1 if enough RAM
+DOP = np.array(np.logspace(np.log10(1E-2), np.log10(2E-1), N_DOP))  # list of doping values
+Np_I_wish = 500  # number of dopants I wish in a replica
+a = np.array((Np_I_wish / DOP) ** (1.0 / 3.0), dtype=np.int)  # size of the system. system is a cube, volume = a * a * a
 for i in range(len(a)):
     if a[i] < 15:
-        a[i] = 15.0
+        a[i] = 15.0  # system size will not be < 15 nm
 
 
 def generate_sh_file(file_name='run_lf_from_threadfarm.sh',
@@ -160,16 +161,76 @@ def write_joblist():
         generate_sh_file()
 
 
-def load_all_dipoles():
+def load_all_dipoles(path=BASE_PATH,
+                     path_to_dipole='results/experiments/trajectories',
+                     total_dipole_time_fname='trajec_0.dip_t',
+                     dipole_xyz_fname='trajec_0.dip_vec',
+                     test=True
+                     ):
     """
     not used
     :return:
     """
+    df_columns = ['time', 'total dipole', 'dip_x', 'dip_y', 'dip_z', 'doping', 'replica']
+    outer_level = "dop_"  # TODO: save to yaml file
+    inner_level = "r_"
+    print('Load Dipoles...')
 
+
+
+    df = pd.DataFrame(
+        columns=df_columns
+    )  # empty
+
+    global DOP, N_R  # will not compile unless I make it
+
+    if test:
+        DOP = DOP[0:2]
+        N_R = 2
+
+    for i_dop, dop in enumerate(DOP):
+        print(i_dop)
+        for i_r in range(N_R):
+            print(str(i_r))
+            var_path = outer_level + str(i_dop) + '/' + inner_level + str(i_r)
+            time_and_total_dipole = os.path.join(path, var_path, path_to_dipole, total_dipole_time_fname)
+            xyz_dipole_components = os.path.join(path, var_path, path_to_dipole, dipole_xyz_fname)
+            _ = np.loadtxt(time_and_total_dipole)
+            __ = np.loadtxt(xyz_dipole_components)
+            dwel_time = _[:, 0]
+            total_dipole = _[:, 1]
+            dipole_x = __[:, 0]
+            dipole_y = __[:, 1]
+            dipole_z = __[:, 2]
+            print(i_dop, i_r)
+            print(xyz_dipole_components)
+            # i=0
+
+            def create_df(df_columns=df_columns, current_i_dop=0, current_i_r=0):
+                df = pd.DataFrame(
+                            list(zip(dwel_time,
+                                     total_dipole,
+                                     dipole_x,
+                                     dipole_y,
+                                     dipole_z,
+                                     np.ones(number_of_frames)*current_i_dop,
+                                     np.ones(number_of_frames)*current_i_r)),
+                            columns=['time', 'total dipole', 'dip_x', 'dip_y', 'dip_z', 'doping', 'replica'],
+                            )
+                return df.astype({'replica': int})
+            number_of_frames = len(dwel_time)
+            incremental_df = create_df(current_i_dop=i_dop,
+                                    current_i_r=i_r)
+            df = df.append(incremental_df)
+    print('...Dipoles loaded')
+    df.to_csv(os.path.join(path, 'dipoles.csv'))
+    mem_of_df = df.memory_usage()
+    print(f'Dataframe with dipole -- memory usage [Gb]: {mem_of_df* 1E-9}')
+    print('done')
     pass
 
 
-def return_mobility(path='/home/artem/Desktop/LF_data_from_hk/dis_0_1_node',
+def return_mobility(path=BASE_PATH,
                     path_to_mobility='results/experiments/current_characteristics/mobilities_0.dat',
                     path_to_current_density='results/experiments/current_characteristics/all_data_points/current_density_0.dat',
                     path_to_yaml='lf_wrapper.yaml'):
@@ -224,5 +285,6 @@ def return_mobility(path='/home/artem/Desktop/LF_data_from_hk/dis_0_1_node',
 
 
 if __name__ == '__main__':
-    return_mobility()
+    # return_mobility()
+    load_all_dipoles()
     # write_joblist()  # <-- this must be a function to create jobfile
