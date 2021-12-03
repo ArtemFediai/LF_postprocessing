@@ -172,7 +172,7 @@ def load_dipoles(path=BASE_PATH,
                  path_to_dipole='results/experiments/trajectories',
                  total_dipole_time_fname='trajec_0.dip_t',
                  dipole_xyz_fname='trajec_0.dip_vec',
-                 test=True
+                 test=False
                  ):
     """
     not used
@@ -190,8 +190,8 @@ def load_dipoles(path=BASE_PATH,
     global DOP, N_R  # will not compile unless I make it
 
     if test:
-        DOP = DOP[0:10]
-        N_R = 3
+        DOP = DOP[0:10]  # set doping by hands
+        N_R = 5  # set number of replicas by hand
 
     for i_dop, dop in enumerate(DOP):
         print(i_dop)
@@ -245,14 +245,16 @@ def load_dipoles(path=BASE_PATH,
 def return_mobility(path=BASE_PATH,
                     path_to_mobility='results/experiments/current_characteristics/mobilities_0.dat',
                     path_to_current_density='results/experiments/current_characteristics/all_data_points/current_density_0.dat',
-                    path_to_yaml='lf_wrapper.yaml'):
+                    path_to_yaml='lf_wrapper.yaml',
+                    debug_mode=False):
     """
 
-    :param path:
-    :param path_to_mobility:
-    :param path_to_yaml:
+    :param dubug_mode: if True, print more
+    :param path: base path
+    :param path_to_mobility: path from the base path to mobilitie
+    :param path_to_yaml: will be
     :return:
-    pd_mobility: pandas data frame mit doping / field / mobility
+    pd_mobility: pandas data frame with doping / field / mobility
     """
 
     outer_level = "dop_"  # TODO: save to yaml file
@@ -270,13 +272,16 @@ def return_mobility(path=BASE_PATH,
     )
 
     for i_dop, dop in enumerate(DOP):
-        print(i_dop)
+        if debug_mode:
+            print(i_dop)
         for i_r in range(N_R):
-            print(str(i_r))
+            if debug_mode:
+                print(str(i_r))
             var_path = outer_level + str(i_dop) + '/' + inner_level + str(i_r)
             current_path_to_mobility = os.path.join(path, var_path, path_to_mobility)
             current_path_to_current_density = os.path.join(path, var_path, path_to_current_density)
-            print(current_path_to_mobility)
+            if debug_mode:
+                print(current_path_to_mobility)
             _ = np.loadtxt(current_path_to_mobility)
             __ = np.loadtxt(current_path_to_current_density)
             pd_mobility = pd_mobility.append({'doping': dop,
@@ -287,7 +292,7 @@ def return_mobility(path=BASE_PATH,
                                              ignore_index=True)
 
     pd_mobility['conductivity [Sm/m]'] = pd_mobility['current density [A/m^2]'] / (pd_mobility['field'] * 1E9)
-    print(pd_mobility)
+    print(pd_mobility.describe())
 
     pd_mobility.to_csv(os.path.join(path, 'mobility.csv'))
     print("I save mobility, conductivity etc. to mobility.png")
