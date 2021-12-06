@@ -15,7 +15,10 @@ global a, SETTINGS_FILENAME, DOP, N_R, N_DOP, N_CPUs, YAML_FILENAME, BASE_PATH
 GENERATE_SH_FILE = True  # sh file for SLURM (horeka)
 # <-- if I want sh file to be generated
 
-BASE_PATH = '/home/artem/Desktop/LF_data_from_hk/dis_0_1_node'  # LF simulation directory
+with open('CONFIG.yaml', 'r') as fid:
+    CONFIG = yaml.load(fid, Loader=yaml.SafeLoader)
+
+BASE_PATH = CONFIG('BASE_PATH')  # LF simulation directory
 SETTINGS_FILENAME = 'settings_dop'  # LF settings file
 YAML_FILENAME = f'{__file__.split(".")[0]}.yaml'  # yaml file with LF hyperparameters
 N_DOP = 10  # number of doping points
@@ -309,7 +312,6 @@ def return_mobility(path=BASE_PATH,
     print(pd_mobility.describe())
 
     pd_mobility.to_csv(os.path.join(path, 'mobility.csv'))
-    print("I save mobility, conductivity etc. to mobility.png")
 
     return pd_mobility
 

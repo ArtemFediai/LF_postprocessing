@@ -3,11 +3,11 @@ visualize lightforge simulations: currents, mobilities, etc.
 """
 import copy
 import os.path
-
+import yaml
 import matplotlib.pyplot as plt
 import numpy as np
 
-from lf_wrapper import return_mobility
+from lf_wrapper import return_mobility, save_dipoles_to_csv
 import pandas as pd
 import seaborn as sns
 import matplotlib
@@ -16,7 +16,10 @@ matplotlib.use('Agg')
 matplotlib.style.use('ggplot')
 sns.set_style('whitegrid')
 
-BASE_PATH = '/home/artem/Desktop/LF_data_from_hk/dis_0_1_node'  # PATH to folder with lf simulations
+
+with open('CONFIG.yaml', 'r') as fid:
+    CONFIG = yaml.load(fid, Loader=yaml.SafeLoader)
+BASE_PATH = CONFIG('BASE_PATH')  # LF simulation directory
 OUT_PATH = os.path.join(BASE_PATH, 'postprocessing')  # everything will be saved here
 OUT_SUBPATH_MOBILITIES = os.path.join(OUT_PATH, 'mobilities')
 OUT_SUBPATH_RAW_DIPOLES = os.path.join(OUT_PATH, 'dipoles_vs_t')
@@ -77,11 +80,18 @@ for col_name, fig_name in cols_vs_filenames.items():
 
 
 # DIPOLES-->
-print('\nI load dipoles from dipoles.csv ...')
 path_to_csv = os.path.join(BASE_PATH, 'dipoles.csv')
-dipoles_df = pd.read_csv(path_to_csv)
-print('...dipoles loaded.')
-# dipoles_df.dtypes
+if os.path.exists(path_to_csv):
+    print('\nI load dipoles from dipoles.csv ...')
+    dipoles_df = pd.read_csv(path_to_csv)
+    print('...dipoles loaded.')
+else:
+    print(f'\nI will read dipoles from the raw simulation data, save it to {path_to_csv} and then read them therefrom.'
+          f' This takes some time...')
+    save_dipoles_to_csv()
+    dipoles_df = pd.read_csv(path_to_csv)
+    print('...dipoles are loaded')
+# dipoles_df.dtypes.
 
 # dipoles vs time at one plot for every doping -->
 for i_dop in np.unique(dipoles_df['doping']):
