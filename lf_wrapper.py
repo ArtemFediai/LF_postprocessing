@@ -111,7 +111,7 @@ def run_kmc(i_dop, i_r):
     SETTINGS_FILENAME = 'settings_dop'
     with open(SETTINGS_FILENAME, 'r') as fid:
         settings = yaml.load(fid)
-    dir_name = f'dop_{i_dop}/r_{i_r}'
+    dir_name = f'dop_{i_dop}/r_{i_r}'  # this is a folder that will be created
     if not os.path.isdir(dir_name):
         os.makedirs(dir_name)
 
@@ -137,8 +137,8 @@ def run_kmc(i_dop, i_r):
 
 def write_joblist():
     """
-    creates joblist for threadfarm and writes it down
-    save simulation "hyper"parameters into __name__.yaml
+    creates joblist for the threadfarm and writes it down
+    saves simulation "hyper"parameters into __name__.yaml
     optionally generates sh file for SLURM
     :return:
     """
@@ -168,35 +168,62 @@ def write_joblist():
         generate_sh_file()
 
 
-def load_dipoles(path=BASE_PATH,
-                 path_to_dipole='results/experiments/trajectories',
-                 total_dipole_time_fname='trajec_0.dip_t',
-                 dipole_xyz_fname='trajec_0.dip_vec',
-                 test=False
-                 ):
+def save_dipoles_to_csv(path=BASE_PATH,
+                        path_to_dipole='results/experiments/trajectories',
+                        total_dipole_time_fname='trajec_0.dip_t',
+                        dipole_xyz_fname='trajec_0.dip_vec',
+                        test=False,
+                        debug_mode=False,
+                        ):
     """
-    not used
+    Reads the dipoles, times, etc from the raw simulation data and saves into csv
+    :param path: path to the lf simulation folder with dop_*/r_*
+    :param path_to_dipole: path from path to folder with dipoles
+    :param total_dipole_time_fname:  filename of time vs total dipole data
+    :param dipole_xyz_fname: filename of dipoles in x y z directions
+    :param test: if True, takes restricted number of of dopings / replicas as hard-coded below
     :return:
+    saves dipoles as csv
     """
     df_columns = ['time', 'total dipole', 'dip_x', 'dip_y', 'dip_z', 'doping', 'replica']
     outer_level = "dop_"  # TODO: save to yaml file
     inner_level = "r_"
-    print('Load Dipoles...')
+    print('\nLoad Dipoles...')
 
     df = pd.DataFrame(
         columns=df_columns
     )  # empty
 
-    global DOP, N_R  # will not compile unless I make it
+    global DOP, N_R  # will not compile unless I make this
 
     if test:
         DOP = DOP[0:10]  # set doping by hands
         N_R = 5  # set number of replicas by hand
 
+    def create_df(columns=None,
+                  current_i_dop=0,
+                  current_i_r=0):
+        """
+        Function to return the dataframe of every doping / replica
+        :param columns: names of the df columns
+        :param current_i_dop: current doping index
+        :param current_i_r: current replica number
+        :return: dataframe, which is to be appended to the whole df of the simulation
+        """
+        current_df = pd.DataFrame(
+            list(zip(dwel_time,
+                     total_dipole,
+                     dipole_x,
+                     dipole_y,
+                     dipole_z,
+                     np.ones(number_of_frames) * current_i_dop,
+                     np.ones(number_of_frames) * current_i_r)),
+            columns=columns,
+        )
+        return current_df.astype({'replica': int})
+
     for i_dop, dop in enumerate(DOP):
-        print(i_dop)
         for i_r in range(N_R):
-            print(str(i_r))
             var_path = outer_level + str(i_dop) + '/' + inner_level + str(i_r)
             time_and_total_dipole_path = os.path.join(path, var_path, path_to_dipole, total_dipole_time_fname)
             xyz_dipole_components_path = os.path.join(path, var_path, path_to_dipole, dipole_xyz_fname)
@@ -207,39 +234,26 @@ def load_dipoles(path=BASE_PATH,
             dipole_x = xyz_dipole_components[:, 0]
             dipole_y = xyz_dipole_components[:, 1]
             dipole_z = xyz_dipole_components[:, 2]
-            print(i_dop, i_r)
-            print(xyz_dipole_components_path)
+            if debug_mode:
+                print(f'\ni_dop,\ti_r\t-->\t{i_dop},\t{i_r}')
+                print(f'current path:\t{xyz_dipole_components_path}\n')
 
-            # i=0
-
-            def create_df(df_columns=df_columns, current_i_dop=0, current_i_r=0):
-                df = pd.DataFrame(
-                    list(zip(dwel_time,
-                             total_dipole,
-                             dipole_x,
-                             dipole_y,
-                             dipole_z,
-                             np.ones(number_of_frames) * current_i_dop,
-                             np.ones(number_of_frames) * current_i_r)),
-                    columns=['time', 'total dipole', 'dip_x', 'dip_y', 'dip_z', 'doping', 'replica'],
-                )
-                return df.astype({'replica': int})
 
             number_of_frames = len(dwel_time)
-            incremental_df = create_df(current_i_dop=i_dop,
+            incremental_df = create_df(columns=df_columns,
+                                       current_i_dop=i_dop,
                                        current_i_r=i_r)
             incremental_df = incremental_df.astype({'doping': 'Int8',
                                                     'replica': 'Int8'})
             df = df.append(incremental_df)
     print('...Dipoles loaded')
-    print(f'\nfinal final data types:\n{df.dtypes}')
+    print(f'\nfinal data types:\n{df.dtypes}')
     mem_of_df = sum(df.memory_usage())
-    print(f'\nDataframe with dipole -- memory usage [GB]: {mem_of_df * 1E-9}')
+    print(f'\nDataframe with dipoles -- memory usage [GB]: {mem_of_df * 1E-9}')
     path_to_csv = os.path.join(path, 'dipoles.csv')
-    print(f'Saving df to {path_to_csv}')
+    print(f'Saving df to {path_to_csv}...')
     df.to_csv(path_to_csv)
-    print('done')
-    pass
+    print(f'... saved df to {path_to_csv}.')
 
 
 def return_mobility(path=BASE_PATH,
@@ -248,8 +262,8 @@ def return_mobility(path=BASE_PATH,
                     path_to_yaml='lf_wrapper.yaml',
                     debug_mode=False):
     """
-
-    :param dubug_mode: if True, print more
+    reads in and returns mobility / current density, etc as a df
+    :param dubug_mode: if True, prints more
     :param path: base path
     :param path_to_mobility: path from the base path to mobilitie
     :param path_to_yaml: will be
@@ -302,5 +316,5 @@ def return_mobility(path=BASE_PATH,
 
 if __name__ == '__main__':
     # return_mobility()
-    load_dipoles()
+    save_dipoles_to_csv()
     # write_joblist()  # <-- this must be a function to create jobfile
