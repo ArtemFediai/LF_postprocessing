@@ -18,7 +18,7 @@ GENERATE_SH_FILE = True  # sh file for SLURM (horeka)
 with open('CONFIG.yaml', 'r') as fid:
     CONFIG = yaml.load(fid, Loader=yaml.SafeLoader)
 
-BASE_PATH = CONFIG('BASE_PATH')  # LF simulation directory
+BASE_PATH = CONFIG['BASE_PATH']  # LF simulation directory
 SETTINGS_FILENAME = 'settings_dop'  # LF settings file
 YAML_FILENAME = f'{__file__.split(".")[0]}.yaml'  # yaml file with LF hyperparameters
 N_DOP = 10  # number of doping points

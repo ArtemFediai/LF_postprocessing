@@ -19,7 +19,7 @@ sns.set_style('whitegrid')
 
 with open('CONFIG.yaml', 'r') as fid:
     CONFIG = yaml.load(fid, Loader=yaml.SafeLoader)
-BASE_PATH = CONFIG('BASE_PATH')  # LF simulation directory
+BASE_PATH = CONFIG['BASE_PATH']  # LF simulation directory
 OUT_PATH = os.path.join(BASE_PATH, 'postprocessing')  # everything will be saved here
 OUT_SUBPATH_MOBILITIES = os.path.join(OUT_PATH, 'mobilities')
 OUT_SUBPATH_RAW_DIPOLES = os.path.join(OUT_PATH, 'dipoles_vs_t')
