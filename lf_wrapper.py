@@ -10,28 +10,41 @@ import pandas as pd
 import yaml
 import inspect
 
-global a, SETTINGS_FILENAME, DOP, N_R, N_DOP, N_CPUs, YAML_FILENAME, BASE_PATH
-# if I want sh file to be generated -->
-GENERATE_SH_FILE = True  # sh file for SLURM (horeka)
-# <-- if I want sh file to be generated
+global A, SETTINGS_FILENAME, DOP, N_R, N_DOP, N_CPUs, YAML_FILENAME, BASE_PATH
 
 with open('CONFIG.yaml', 'r') as fid:
     CONFIG = yaml.load(fid, Loader=yaml.SafeLoader)
 
 BASE_PATH = CONFIG['BASE_PATH']  # LF simulation directory
-JOBLIST_NAME = 'joblist'  # name of the joblist file for threadfarm
-SETTINGS_FILENAME = 'settings_dop'  # LF settings file
-YAML_FILENAME = f'{__file__.split(".")[0].split("/")[-1]}.yaml'  # yaml file with LF hyperparameters
-N_DOP = 10  # number of doping points
-N_R = 30  # try not using this!
-N_CPUs = 1  # number of cpus used per replica. 1 if enough RAM
-DOP = np.array(np.logspace(np.log10(1E-2), np.log10(2E-1), N_DOP))  # list of doping values
-Np_I_wish = 500  # number of dopants I wish in a replica. system size is changed accordingly.
-a = np.array((Np_I_wish / DOP) ** (1.0 / 3.0), dtype=np.int)  # size of the system. system is a cube, volume = a * a * a
-for i in range(len(a)):
-    if a[i] < 15:
-        a[i] = 15.0  # system size will not be < 15 nm
+JOBLIST_NAME = CONFIG['JOBLIST_NAME']  # name of the joblist file for threadfarm
+SETTINGS_FILENAME = CONFIG['SETTINGS_FILENAME']  # LF settings file
+if CONFIG['YAML_FILENAME'] == 'default':
+    YAML_FILENAME = f'{__file__.split(".")[0].split("/")[-1]}.yaml'  # yaml file with LF hyperparameters
+else:
+    YAML_FILENAME = CONFIG['YAML_FILENAME']
+N_DOP = CONFIG['N_DOP']  # number of doping points
+N_R = CONFIG['N_R']  # try not using this!
+N_CPUs = CONFIG['N_CPUS']  # number of cpus used per replica. 1 if enough RAM
+DOP_MIN = CONFIG['DOP_MIN']
+DOP_MAX = CONFIG['DOP_MAX']
+DOP_SCALE = CONFIG['DOP_SCALE']
+if DOP_SCALE == 'log' or DOP_SCALE == 'LOG':
+    DOP = np.array(np.logspace(np.log10(DOP_MIN), np.log10(DOP_MAX), N_DOP))  # list of doping values
+elif DOP_SCALE == 'lin' or DOP_SCALE == 'LIN':
+    DOP = np.array(np.linspace(DOP_MIN, DOP_MAX, N_DOP))  # list of doping values
+N_DOP_I_WISH = 500  # number of dopants I wish in a replica. system size is changed accordingly.
+A = np.array((N_DOP_I_WISH / DOP) ** (1.0 / 3.0), dtype=np.int)  # size of the system, volume = A * A * A
+MIN_A = 15
+MAX_A = 100
+for i in range(len(A)):
+    if A[i] < MIN_A:
+        A[i] = MIN_A  # system size will not be < 15 nm
+    if A[i] > MAX_A:
+        A[i] = MAX_A  # system size will not be > 100 nm
 
+# if I want sh file to be generated -->
+GENERATE_SH_FILE = CONFIG['GENERATE_SH_FILE']  # sh file for SLURM (horeka)
+# <-- if I want sh file to be generated
 
 def generate_sh_file(base_path=BASE_PATH,
                      file_name='run_lf_from_threadfarm.sh',
@@ -106,7 +119,7 @@ def generate_sh_file(base_path=BASE_PATH,
                       f'\n'
                       f'MPI_PATH/bin/mpirun --bind-to none --mca btl self,vader,tcp python $THREADFARMBIN/thread_mpi_exe.py joblist'
                       f'\n')
-    print(f'... sh file into {file_name} saved.')
+    print(f'... sh saved into {file_name}.')
 
 
 def run_kmc(i_dop, i_r):
@@ -125,8 +138,8 @@ def run_kmc(i_dop, i_r):
         os.makedirs(dir_name)
 
     ###########
-    settings["layers"][0]["thickness"] = np.int(a[i_dop])
-    settings["morphology_width"] = np.int(a[i_dop])
+    settings["layers"][0]["thickness"] = np.int(A[i_dop])
+    settings["morphology_width"] = np.int(A[i_dop])
     settings['layers'][0]['molecule_species'][0]['concentration'] = float(1.0 - DOP[i_dop])
     settings['layers'][0]['molecule_species'][1]['concentration'] = float(DOP[i_dop])
     ###########
@@ -155,7 +168,7 @@ def write_joblist(base_path=BASE_PATH):
     global JOBLIST_NAME, YAML_FILENAME
 
     # joblist
-    num_part_after = np.array(a * a * a * DOP, dtype=np.float)
+    num_part_after = np.array(A * A * A * DOP, dtype=np.float)
     JOBLIST_NAME = os.path.join(base_path, JOBLIST_NAME)
     print(f'\nI save joblist into {JOBLIST_NAME}')
     with open(JOBLIST_NAME, 'w') as fid:
@@ -163,7 +176,7 @@ def write_joblist(base_path=BASE_PATH):
             for i_r in range(0, N_R):
                 fid.write(f"%i {__file__.split('.')[0].split('/')[-1]}.run_kmc %i %i\n" % (N_CPUs, i_dop, i_r))
 
-    main_settings_dict = {'system size': a.tolist(),  # nm
+    main_settings_dict = {'system size': A.tolist(),  # nm
                           'number of doping points': N_DOP,
                           'number of replicas': N_R,
                           'doping molar rate': DOP.tolist(),  # 0 < DOP < 1
@@ -172,7 +185,7 @@ def write_joblist(base_path=BASE_PATH):
     yaml_filename = os.path.join(base_path, YAML_FILENAME)
     with open(yaml_filename, 'w') as fid:
         yaml.dump(data=main_settings_dict, stream=fid)
-    print(f"\nhyper-settings saved as {yaml_filename}")
+    print(f"\nSettings hyperparameters saved as {yaml_filename}")
 
     print("\nSettings hyperparameters:")
     for key, value in main_settings_dict.items():
