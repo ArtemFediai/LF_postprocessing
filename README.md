@@ -13,7 +13,7 @@ $ cd $HOME
 $ git clone https://github.com/ArtemFediai/LF_postprocessing.git
 ```
 
-##Set the environment for the module LF_postprocessing
+## Set the environment for the module LF_postprocessing
 Assume 
 [requirements.txt](https://github.com/ArtemFediai/LF_postprocessing/blob/master/requirements.txt)
 yielded 
@@ -26,7 +26,7 @@ $ conda activate $HOME/QP_installation_V4/nanomatch/V4/local_anaconda/envs/nanom
 $ conda develop ~/LF_postprocessing
 ```
 
-##Prepare the data for the simulation
+## Prepare the data for the simulation
 Go to the workspace of the reference:
 ```shell
 $ ws_list
@@ -51,7 +51,7 @@ Here, two latter lines were copied as default examples of the
 (files with the lightforge hyperparameters and the reference settings file, respectively).
 You should  change them according to your needs. 
 
-##Generate files to start threadfarm
+## Generate files to start threadfarm
 
 Do the following:
 ```shell
