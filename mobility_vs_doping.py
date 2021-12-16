@@ -72,7 +72,7 @@ print("\nI plot mobilities, etc. ...")
 for col_name, fig_name in cols_vs_filenames.items():
     # print(f'col_name, figure_name {col_name, fig_name}')
     lineplot(data=df_mobility,
-             base_path=os.path.join(OUT_PATH, OUT_SUBPATH_MOBILITIES),
+             base_path=os.path.join(OUT_SUBPATH_MOBILITIES),
              save_to=fig_name,
              y_axis=col_name)
     print(f'{col_name} plotted at {os.path.join(BASE_PATH, fig_name)}')
@@ -98,7 +98,7 @@ for i_dop in np.unique(dipoles_df['doping']):
     df_per_dop = dipoles_df[dipoles_df['doping'] == i_dop]
     plt.figure()
     lineplot(data=df_per_dop,
-             base_path=os.path.join(OUT_PATH, OUT_SUBPATH_RAW_DIPOLES),
+             base_path=os.path.join(OUT_SUBPATH_RAW_DIPOLES),
              save_to=f'dipoles_raw_dop_{i_dop}.png',
              x_axis='time',
              y_axis='dip_x',  # x is the field direction
