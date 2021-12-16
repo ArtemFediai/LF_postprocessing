@@ -54,7 +54,7 @@ def generate_sh_file(base_path=BASE_PATH,
                      email='artem.fedyay@gmail.com',
                      NANOMATCH='/home/hk-project-virtmat/bh5670/QP_installation_V4/nanomatch',
                      NANOVER='V4',
-                     THREADFARM='/home/hk-project-virtmat/bh5670/QP_installation_V4/nanomatch/V4/QuantumPatch/mpithreadfarm/bin',
+                     THREADFARM='/home/hk-project-virtmat/bh5670/QP_installation_V4/nanomatch/V4/QuantumPatch/mpithreadfarm',
                      ):
     """
     writes sh file to be run at horeka
