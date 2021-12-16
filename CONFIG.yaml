@@ -2,13 +2,13 @@ BASE_PATH:  /home/artem/Desktop/LF_data_from_hk/dis_0_1_node  # set here the pat
 JOBLIST_NAME: joblist  # name of the joblist file for threadfarm
 SETTINGS_FILENAME: settings_dop  # LF settings file. Has to exist there
 YAML_FILENAME: default  # default is the same as the file it is called from: f'{__file__.split(".")[0].split("/")[-1]}.yaml'  # yaml file with LF hyperparameters
-N_R: 30  # try not using this!
+N_R: 30  # number of replicas
 N_CPUS: 1  # number of cpus used per replica. 1 if enough RAM
-DOP_MIN: 1.0E-2  # format 0.0E-0
-DOP_MAX: 2.0E-1
+DOP_MIN: 1.0E-2  # minimal dopant molar rate, format 0.0E-0
+DOP_MAX: 2.0E-1  # ...
 N_DOP: 10  # number of doping points
-DOP_SCALE: LOG  # LOG or LIN
+DOP_SCALE: LOG  # LOG or LIN (logarithm or linear)
 N_DOP_I_WISH: 500  # number of dopants I wish in a replica. system size is changed accordingly.
-MIN_A: 15
-MAX_A: 100
-GENERATE_SH_FILE: True
+MIN_A: 15  #  simulation box is not smaller than this
+MAX_A: 100  # simulation box is not larger than this
+GENERATE_SH_FILE: True  # if I generate SLURM file
