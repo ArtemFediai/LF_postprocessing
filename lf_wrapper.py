@@ -110,14 +110,14 @@ def generate_sh_file(base_path=BASE_PATH,
                       f'\n'
                       f'module load compiler/gnu/11'
                       f'\n'  # <-- load additional module. Needed?
-                      f'cd SLURM_SUBMIT_DIR'
+                      f'cd $SLURM_SUBMIT_DIR'
                       f'\n'
                       f'ulimit -s unlimited'
                       f'\n'
                       f'export KMP_AFFINITY=none'
                       f'\n'
                       f'\n'
-                      f'MPI_PATH/bin/mpirun --bind-to none --mca btl self,vader,tcp python $THREADFARMBIN/thread_mpi_exe.py joblist'
+                      f'$MPI_PATH/bin/mpirun --bind-to none --mca btl self,vader,tcp python $THREADFARMBIN/thread_mpi_exe.py joblist'
                       f'\n')
     print(f'... sh saved into {file_name}.')
 
