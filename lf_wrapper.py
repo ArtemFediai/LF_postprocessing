@@ -19,8 +19,9 @@ with open('CONFIG.yaml', 'r') as fid:
     CONFIG = yaml.load(fid, Loader=yaml.SafeLoader)
 
 BASE_PATH = CONFIG['BASE_PATH']  # LF simulation directory
+JOBLIST_NAME = 'joblist'  # name of the joblist file for threadfarm
 SETTINGS_FILENAME = 'settings_dop'  # LF settings file
-YAML_FILENAME = f'{__file__.split(".")[0]}.yaml'  # yaml file with LF hyperparameters
+YAML_FILENAME = f'{__file__.split(".")[0].split("/")[-1]}.yaml'  # yaml file with LF hyperparameters
 N_DOP = 10  # number of doping points
 N_R = 30  # try not using this!
 N_CPUs = 1  # number of cpus used per replica. 1 if enough RAM
@@ -32,7 +33,8 @@ for i in range(len(a)):
         a[i] = 15.0  # system size will not be < 15 nm
 
 
-def generate_sh_file(file_name='run_lf_from_threadfarm.sh',
+def generate_sh_file(base_path=BASE_PATH,
+                     file_name='run_lf_from_threadfarm.sh',
                      nodes=1,
                      time='0-24:00:00',
                      partition='accelerated',
@@ -53,7 +55,10 @@ def generate_sh_file(file_name='run_lf_from_threadfarm.sh',
     :param THREADFARM: path to threadfarm
     :return:
     """
-    with open(file_name, 'a') as sh_file:
+
+    file_name = os.path.join(base_path, file_name)
+    print(f'\nI will write sh file into {file_name}...')
+    with open(file_name, 'w') as sh_file:
         sh_file.write(f'#!/bin/bash'
                       f'\n'
                       f'# SBATCH --nodes={nodes}'
@@ -101,6 +106,7 @@ def generate_sh_file(file_name='run_lf_from_threadfarm.sh',
                       f'\n'
                       f'MPI_PATH/bin/mpirun --bind-to none --mca btl self,vader,tcp python $THREADFARMBIN/thread_mpi_exe.py joblist'
                       f'\n')
+    print(f'... sh file into {file_name} saved.')
 
 
 def run_kmc(i_dop, i_r):
@@ -138,7 +144,7 @@ def run_kmc(i_dop, i_r):
             analysis_autorun=False)
 
 
-def write_joblist():
+def write_joblist(base_path=BASE_PATH):
     """
     creates joblist for the threadfarm and writes it down
     saves simulation "hyper"parameters into __name__.yaml
@@ -146,9 +152,13 @@ def write_joblist():
     :return:
     """
     # name_of_this_fun = inspect.stack()[0][3]  # returns name of the current function
+    global JOBLIST_NAME, YAML_FILENAME
 
+    # joblist
     num_part_after = np.array(a * a * a * DOP, dtype=np.float)
-    with open("joblist", 'w') as fid:
+    JOBLIST_NAME = os.path.join(base_path, JOBLIST_NAME)
+    print(f'\nI save joblist into {JOBLIST_NAME}')
+    with open(JOBLIST_NAME, 'w') as fid:
         for i_dop in range(0, len(DOP)):
             for i_r in range(0, N_R):
                 fid.write(f"%i {__file__.split('.')[0].split('/')[-1]}.run_kmc %i %i\n" % (N_CPUs, i_dop, i_r))
@@ -159,9 +169,10 @@ def write_joblist():
                           'doping molar rate': DOP.tolist(),  # 0 < DOP < 1
                           'actual dopants number': np.array(num_part_after, dtype=np.int).tolist(),
                           'number of simulations': N_R * N_DOP}
-    with open(YAML_FILENAME, 'w') as fid:
+    yaml_filename = os.path.join(base_path, YAML_FILENAME)
+    with open(yaml_filename, 'w') as fid:
         yaml.dump(data=main_settings_dict, stream=fid)
-    print(f"\nhyper-settings saved as {YAML_FILENAME}")
+    print(f"\nhyper-settings saved as {yaml_filename}")
 
     print("\nSettings hyperparameters:")
     for key, value in main_settings_dict.items():
@@ -241,7 +252,6 @@ def save_dipoles_to_csv(path=BASE_PATH,
                 print(f'\ni_dop,\ti_r\t-->\t{i_dop},\t{i_r}')
                 print(f'current path:\t{xyz_dipole_components_path}\n')
 
-
             number_of_frames = len(dwel_time)
             incremental_df = create_df(columns=df_columns,
                                        current_i_dop=i_dop,
@@ -318,5 +328,6 @@ def return_mobility(path=BASE_PATH,
 
 if __name__ == '__main__':
     # return_mobility()
-    save_dipoles_to_csv()
+    # save_dipoles_to_csv()
+    write_joblist()
     # write_joblist()  # <-- this must be a function to create jobfile

@@ -107,8 +107,9 @@ for i_dop in np.unique(dipoles_df['doping']):
              xscale='linear',
              yscale='linear')
     plt.close()
+# -->
 
-# dipoles vs (time - t_0) where t_0 is the time when I start recording data.
+# dipoles vs (time - t_0) where t_0 is the time when I start recording data -->
 for i_dop in np.unique(dipoles_df['doping']):
     plt.figure()
     for i_r in np.unique(dipoles_df['replica']):
@@ -120,5 +121,6 @@ for i_dop in np.unique(dipoles_df['doping']):
         plt.plot(z, df_per_r_per_dop['dip_x'], color=f'C{i_r}')
         mean_dip_x = np.mean(df_per_r_per_dop['dip_x'])
         plt.plot(z, np.ones(len(z)) * mean_dip_x, linestyle=':', color=f'C{i_r}')
-    plt.savefig(os.path.join(OUT_SUBPATH_t_minus_t0_DIPOLES, 'd_{i_dop}.png'))
+    plt.savefig(os.path.join(OUT_SUBPATH_t_minus_t0_DIPOLES, f'd_{i_dop}.png'))
     plt.close()
+# <--
