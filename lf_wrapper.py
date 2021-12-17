@@ -281,6 +281,87 @@ def save_dipoles_to_csv(path=BASE_PATH,
     df.to_csv(path_to_csv)
     print(f'... saved df to {path_to_csv}.')
 
+def save_coulomb_energy_to_csv(path=BASE_PATH,
+                          path_to_coulomb_energy='results/experiments/particle_densities/all_data_points',
+                          coulomb_energy_file_name='E_Coulomb_0.dat',
+                          path_to_yaml='lf_wrapper.yaml',
+                          debug_mode=False):
+
+    df_columns = ['coulomb energies [eV]', 'doping', 'replica']
+
+    df = pd.DataFrame(
+        columns=df_columns
+    )  # empty
+
+    def create_df(columns=None,
+                  current_i_dop=0,
+                  current_i_r=0):
+        """
+        Function to return the dataframe of every doping / replica
+        :param columns: names of the df columns
+        :param current_i_dop: current doping index
+        :param current_i_r: current replica number
+        :return: dataframe, which is to be appended to the whole df of the simulation
+        """
+        try:
+            current_df = pd.DataFrame(
+                list(zip(coulomb_energy,
+                         np.ones(number_of_frames) * current_i_dop,
+                         np.ones(number_of_frames) * current_i_r)),
+                columns=columns,
+            )
+        except:
+            list_of_three = [[coulomb_energy.item(), current_i_dop, current_i_r]]
+            current_df = pd.DataFrame(
+                list_of_three,
+                columns=columns,
+            )
+        return current_df.astype({'replica': int})
+
+
+    outer_level = "dop_"  # TODO: save to yaml file
+    inner_level = "r_"
+    # <-- dop_XX/r_XX
+
+    with open(file=path_to_yaml, mode='r') as fid:
+        hypersettings_dict = yaml.load(fid, Loader=yaml.SafeLoader)
+
+    DOP = hypersettings_dict['doping molar rate']
+    N_R = hypersettings_dict['number of replicas']
+
+    pd_coulomb_energy = pd.DataFrame(
+        columns=['coulomb energies [eV]']
+    )
+
+    for i_dop, dop in enumerate(DOP):
+        if debug_mode:
+            print(i_dop)
+        for i_r in range(N_R):
+            if debug_mode:
+                print(str(i_r))
+            var_path = outer_level + str(i_dop) + '/' + inner_level + str(i_r)
+            current_path_to_coulomb_energy = os.path.join(path, var_path, path_to_coulomb_energy, coulomb_energy_file_name)
+            if debug_mode:
+                print(current_path_to_coulomb_energy)
+            coulomb_energy = np.loadtxt(current_path_to_coulomb_energy)
+
+            # print(coulomb_energy)
+            try:
+                number_of_frames = len(coulomb_energy)
+            except TypeError:
+                number_of_frames = 1
+            incremental_df = create_df(columns=df_columns,
+                                       current_i_dop=i_dop,
+                                       current_i_r=i_r)
+            incremental_df = incremental_df.astype({'doping': 'Int8',
+                                                    'replica': 'Int8'})
+            df = df.append(incremental_df)
+    print(df.describe())
+
+    df.to_csv(os.path.join(path, 'coulomb_energy.csv'))
+
+    # return pd_coulomb_energy
+
 
 def return_mobility(path=BASE_PATH,
                     path_to_mobility='results/experiments/current_characteristics/mobilities_0.dat',
@@ -342,5 +423,6 @@ def return_mobility(path=BASE_PATH,
 if __name__ == '__main__':
     # return_mobility()
     # save_dipoles_to_csv()
-    write_joblist()
+    # write_joblist()
+    save_dipoles_to_csv()
     # write_joblist()  # <-- this must be a function to create jobfile

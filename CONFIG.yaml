@@ -1,8 +1,9 @@
-BASE_PATH:  /home/artem/Desktop/LF_data_from_hk/dis_0_1_node  # set here the path to lightforge simulations where dop_*/r_* are
+#BASE_PATH:  /home/artem/Desktop/LF_data_from_hk/dis_0_1_node  # set here the path to lightforge simulations where dop_*/r_* are
+BASE_PATH: /home/artem/Desktop/save_energy_5r
 JOBLIST_NAME: joblist  # name of the joblist file for threadfarm
 SETTINGS_FILENAME: settings_dop  # LF settings file. Has to exist there
 YAML_FILENAME: default  # default is the same as the file it is called from: f'{__file__.split(".")[0].split("/")[-1]}.yaml'  # yaml file with LF hyperparameters
-N_R: 30  # number of replicas
+N_R: 5  # number of replicas
 N_CPUS: 1  # number of cpus used per replica. 1 if enough RAM
 DOP_MIN: 1.0E-2  # minimal dopant molar rate, format 0.0E-0
 DOP_MAX: 2.0E-1  # ...

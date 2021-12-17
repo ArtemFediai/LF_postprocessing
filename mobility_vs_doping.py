@@ -7,7 +7,7 @@ import yaml
 import matplotlib.pyplot as plt
 import numpy as np
 
-from lf_wrapper import return_mobility, save_dipoles_to_csv
+from lf_wrapper import return_mobility, save_dipoles_to_csv, save_coulomb_energy_to_csv
 import pandas as pd
 import seaborn as sns
 import matplotlib
@@ -23,6 +23,7 @@ BASE_PATH = CONFIG['BASE_PATH']  # LF simulation directory
 OUT_PATH = os.path.join(BASE_PATH, 'postprocessing')  # everything will be saved here
 OUT_SUBPATH_MOBILITIES = os.path.join(OUT_PATH, 'mobilities')
 OUT_SUBPATH_RAW_DIPOLES = os.path.join(OUT_PATH, 'dipoles_vs_t')
+OUT_SUBPATH_RAW_DIPOLES = os.path.join(OUT_PATH, 'coulomb')
 OUT_SUBPATH_t_minus_t0_DIPOLES = os.path.join(OUT_PATH, 'dipoles_vs_t_minus_t0')
 
 OUT_SUBPATHS = [OUT_SUBPATH_MOBILITIES, OUT_SUBPATH_RAW_DIPOLES, OUT_SUBPATH_t_minus_t0_DIPOLES]
@@ -124,3 +125,28 @@ for i_dop in np.unique(dipoles_df['doping']):
     plt.savefig(os.path.join(OUT_SUBPATH_t_minus_t0_DIPOLES, f'd_{i_dop}.png'))
     plt.close()
 # <--
+
+# --> Coulomb energy
+path_to_csv = os.path.join(BASE_PATH, 'coulomb_energy.csv')
+
+print(f'\nI will read coulomb energy from the raw simulation data, save it to {path_to_csv} and then read them therefrom.'
+      f' This takes some time...')
+save_coulomb_energy_to_csv()
+coulomb_energy_df = pd.read_csv(path_to_csv)
+print('...coulomb energy is loaded')
+
+# coulomb energy vs iter/n at one plot for every doping -->
+for i_dop in np.unique(coulomb_energy_df['doping']):
+    df_per_dop = coulomb_energy_df[coulomb_energy_df['doping'] == i_dop]
+    plt.figure()
+    lineplot(data=df_per_dop,
+             base_path=os.path.join(OUT_SUBPATH_RAW_DIPOLES),
+             save_to=f'coulomb_energy_dop_{i_dop}.png',
+             x_axis='Unnamed: 0',
+             y_axis='coulomb energies [eV]',  # x is the field direction
+             hue='replica',
+             style=None,
+             xscale='linear',
+             yscale='linear')
+    plt.close()
+# -->
