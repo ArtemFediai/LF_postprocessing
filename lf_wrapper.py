@@ -44,6 +44,8 @@ for i in range(len(A)):
 
 # if I want sh file to be generated -->
 GENERATE_SH_FILE = CONFIG['GENERATE_SH_FILE']  # sh file for SLURM (horeka)
+
+
 # <-- if I want sh file to be generated
 
 def generate_sh_file(base_path=BASE_PATH,
@@ -281,12 +283,12 @@ def save_dipoles_to_csv(path=BASE_PATH,
     df.to_csv(path_to_csv)
     print(f'... saved df to {path_to_csv}.')
 
-def save_coulomb_energy_to_csv(path=BASE_PATH,
-                          path_to_coulomb_energy='results/experiments/particle_densities/all_data_points',
-                          coulomb_energy_file_name='E_Coulomb_0.dat',
-                          path_to_yaml='lf_wrapper.yaml',
-                          debug_mode=False):
 
+def save_coulomb_energy_to_csv(path=BASE_PATH,
+                               path_to_coulomb_energy='results/experiments/particle_densities/all_data_points',
+                               coulomb_energy_file_name='E_Coulomb_0.dat',
+                               path_to_yaml='lf_wrapper.yaml',
+                               debug_mode=False):
     df_columns = ['coulomb energies [eV]', 'doping', 'replica']
 
     df = pd.DataFrame(
@@ -318,7 +320,6 @@ def save_coulomb_energy_to_csv(path=BASE_PATH,
             )
         return current_df.astype({'replica': int})
 
-
     outer_level = "dop_"  # TODO: save to yaml file
     inner_level = "r_"
     # <-- dop_XX/r_XX
@@ -340,7 +341,8 @@ def save_coulomb_energy_to_csv(path=BASE_PATH,
             if debug_mode:
                 print(str(i_r))
             var_path = outer_level + str(i_dop) + '/' + inner_level + str(i_r)
-            current_path_to_coulomb_energy = os.path.join(path, var_path, path_to_coulomb_energy, coulomb_energy_file_name)
+            current_path_to_coulomb_energy = os.path.join(path, var_path, path_to_coulomb_energy,
+                                                          coulomb_energy_file_name)
             if debug_mode:
                 print(current_path_to_coulomb_energy)
             coulomb_energy = np.loadtxt(current_path_to_coulomb_energy)
@@ -356,11 +358,104 @@ def save_coulomb_energy_to_csv(path=BASE_PATH,
             incremental_df = incremental_df.astype({'doping': 'Int8',
                                                     'replica': 'Int8'})
             df = df.append(incremental_df)
-    print(df.describe())
+    # print(df.describe())
 
     df.to_csv(os.path.join(path, 'coulomb_energy.csv'))
 
     # return pd_coulomb_energy
+
+def save_dipoles_and_vc_to_csv(path=BASE_PATH,
+                        path_to_dipole='results/experiments/trajectories',
+                        path_to_coulomb_energy='results/experiments/particle_densities/all_data_points',
+                        coulomb_energy_file_name='E_Coulomb_0.dat',
+                        total_dipole_time_fname='trajec_0.dip_t',
+                        dipole_xyz_fname='trajec_0.dip_vec',
+                        test=False,
+                        debug_mode=False,
+                        ):
+    """
+    Reads the dipoles, times, etc from the raw simulation data and saves into csv
+    :param path: path to the lf simulation folder with dop_*/r_*
+    :param path_to_dipole: path from path to folder with dipoles
+    :param total_dipole_time_fname:  filename of time vs total dipole data
+    :param dipole_xyz_fname: filename of dipoles in x y z directions
+    :param test: if True, takes restricted number of of dopings / replicas as hard-coded below
+    :return:
+    saves dipoles as csv
+    """
+    df_columns = ['time', 'total dipole', 'dip_x', 'dip_y', 'dip_z', 'coulomb energies [eV]', 'doping', 'replica']
+    outer_level = "dop_"  # TODO: save to yaml file
+    inner_level = "r_"
+    print('\nLoad Dipoles and Coulomb Energy...')
+
+    df = pd.DataFrame(
+        columns=df_columns
+    )  # empty
+
+    global DOP, N_R  # will not compile unless I make this
+
+    if test:
+        DOP = DOP[0:10]  # set doping by hands
+        N_R = 5  # set number of replicas by hand
+
+    def create_df(columns=None,
+                  current_i_dop=0,
+                  current_i_r=0):
+        """
+        Function to return the dataframe of every doping / replica
+        :param columns: names of the df columns
+        :param current_i_dop: current doping index
+        :param current_i_r: current replica number
+        :return: dataframe, which is to be appended to the whole df of the simulation
+        """
+        current_df = pd.DataFrame(
+            list(zip(dwel_time,
+                     total_dipole,
+                     dipole_x,
+                     dipole_y,
+                     dipole_z,
+                     coulomb_energy,
+                     np.ones(number_of_frames) * current_i_dop,
+                     np.ones(number_of_frames) * current_i_r)),
+            columns=columns,
+        )
+        return current_df.astype({'replica': int})
+
+    for i_dop, dop in enumerate(DOP):
+        for i_r in range(N_R):
+            var_path = outer_level + str(i_dop) + '/' + inner_level + str(i_r)
+            time_and_total_dipole_path = os.path.join(path, var_path, path_to_dipole, total_dipole_time_fname)
+            xyz_dipole_components_path = os.path.join(path, var_path, path_to_dipole, dipole_xyz_fname)
+            current_path_to_coulomb_energy = os.path.join(path, var_path, path_to_coulomb_energy,
+                                                          coulomb_energy_file_name)
+            time_and_total_dipole = np.loadtxt(time_and_total_dipole_path) #
+            xyz_dipole_components = np.loadtxt(xyz_dipole_components_path) #
+            coulomb_energy = np.loadtxt(current_path_to_coulomb_energy)
+            dwel_time = time_and_total_dipole[:, 0]
+            total_dipole = time_and_total_dipole[:, 1]
+            dipole_x = xyz_dipole_components[:, 0]
+            dipole_y = xyz_dipole_components[:, 1]
+            dipole_z = xyz_dipole_components[:, 2]
+            if debug_mode:
+                print(f'\ni_dop,\ti_r\t-->\t{i_dop},\t{i_r}')
+                print(f'current path:\t{xyz_dipole_components_path}\n')
+                print(f'current path:\t{current_path_to_coulomb_energy}\n')
+
+            number_of_frames = len(dwel_time)
+            incremental_df = create_df(columns=df_columns,
+                                       current_i_dop=i_dop,
+                                       current_i_r=i_r)
+            incremental_df = incremental_df.astype({'doping': 'Int8',
+                                                    'replica': 'Int8'})
+            df = df.append(incremental_df)
+    print('...Dipoles and VC loaded')
+    print(f'\nfinal data types:\n{df.dtypes}')
+    mem_of_df = sum(df.memory_usage())
+    print(f'\nDataframe with dipoles -- memory usage [GB]: {mem_of_df * 1E-9}')
+    path_to_csv = os.path.join(path, 'dipoles_and_vc.csv')
+    print(f'Saving df to {path_to_csv}...')
+    df.to_csv(path_to_csv)
+    print(f'... saved df to {path_to_csv}.')
 
 
 def return_mobility(path=BASE_PATH,
@@ -424,5 +519,6 @@ if __name__ == '__main__':
     # return_mobility()
     # save_dipoles_to_csv()
     # write_joblist()
-    save_dipoles_to_csv()
+    # save_dipoles_to_csv()
+    save_dipoles_and_vc_to_csv()
     # write_joblist()  # <-- this must be a function to create jobfile
