@@ -6,8 +6,8 @@ import numpy as np
 
 global EPS_0, EPS_R, Q0, ANGSTROME
 EPS_0 = 8.8541878128E-12  # [SI]
-EPS_R = 4
-Q0 = 1.6E-19  # [Si]
+EPS_R = 16  # relative dielectric permittivity
+Q0 = 1.60217662E-19  # [Si]
 ANGSTROME = 1E-10
 PATH_TO_TRAJECTORY = \
     '/home/artem/Desktop/1E5_0_0_no_exper/dop_0/r_0/r_0_manual/results/experiments/trajectories/trajec_0.xyz'
