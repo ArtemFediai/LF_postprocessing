@@ -65,3 +65,9 @@ Three additional files will be generated:
 
 The first two are the input file for the threadfarm and the sh file for SLURM, respectively.
 The third one is simply the summary of the variable LF parameters (hyperparameters). Intended for a user that will quickly understand what was simulated.
+
+## Proper Lightforge version.
+This tool only work with a specific version of Lightforge. Please, change to an appropriate branch:
+```shell
+$ git checkout artem_tmp_branch_for_serial_lf
+```
